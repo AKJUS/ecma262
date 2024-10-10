@@ -1028,7 +1028,7 @@
         <h1>Implicit Normal Completion</h1>
         <p>In algorithms within abstract operations which are declared to return a Completion Record, and within all built-in functions, the returned value is first passed to NormalCompletion, and the result is used instead. This rule does not apply within the Completion algorithm or when the value being returned is clearly marked as a Completion Record in that step; these cases are:</p>
         <ul>
-          <li>when the result of applying Completion, NormalCompletion, or ThrowCompletion is directly returned</li>
+          <li>when the result of applying Completion, NormalCompletion, ThrowCompletion, or ReturnCompletion is directly returned</li>
           <li>when the result of constructing a Completion Record is directly returned</li>
         </ul>
         <p>It is an editorial error if a Completion Record is returned from such an abstract operation through any other means. For example, within these abstract operations,</p>
@@ -1118,10 +1118,9 @@
   </emu-clause>
 </emu-clause>
 
-<emu-clause id="sec-ecmascript-data-types-and-values" aoid="Type">
+<emu-clause id="sec-ecmascript-data-types-and-values">
   <h1>ECMAScript Data Types and Values</h1>
   <p>Algorithms within this specification manipulate values each of which has an associated type. The possible value types are exactly those defined in this clause. Types are further classified into ECMAScript language types and specification types.</p>
-  <p>Within this specification, the notation “Type(_x_)” is used as shorthand for “the <em>type</em> of _x_” where “type” refers to the ECMAScript language and specification types defined in this clause.</p>
 
   <emu-clause id="sec-ecmascript-language-types">
     <h1>ECMAScript Language Types</h1>
@@ -2370,7 +2369,7 @@
             <p>Implementers of ECMAScript may find useful the paper and code written by David M. Gay for binary-to-decimal conversion of floating-point numbers:</p>
             <p>
               Gay, David M. Correctly Rounded Binary-Decimal and Decimal-Binary Conversions. Numerical Analysis, Manuscript 90-10. AT&amp;T Bell Laboratories (Murray Hill, New Jersey). 30 November 1990. Available as<br>
-              <a href="http://ampl.com/REFS/abstracts.html#rounding">http://ampl.com/REFS/abstracts.html#rounding</a>. Associated code available as<br>
+              <a href="https://ampl.com/_archive/first-website/REFS/rounding.pdf">https://ampl.com/_archive/first-website/REFS/rounding.pdf</a>. Associated code available as<br>
               <a href="http://netlib.sandia.gov/fp/dtoa.c">http://netlib.sandia.gov/fp/dtoa.c</a> and as<br>
               <a href="http://netlib.sandia.gov/fp/g_fmt.c">http://netlib.sandia.gov/fp/g_fmt.c</a> and may also be found at the various `netlib` mirror sites.
             </p>
@@ -3147,7 +3146,7 @@
             The normal return type is either Property Descriptor or Undefined.
           </li>
           <li>
-            If the Type of the return value is Property Descriptor, the return value must be a fully populated Property Descriptor.
+            If the return value is a Property Descriptor, it must be a fully populated Property Descriptor.
           </li>
           <li>
             If _P_ is described as a non-configurable, non-writable own data property, all future calls to [[GetOwnProperty]] ( _P_ ) must return Property Descriptor whose [[Value]] is SameValue as _P_'s [[Value]] attribute.
@@ -3236,7 +3235,7 @@
             The returned List must not contain any duplicate entries.
           </li>
           <li>
-            The Type of each element of the returned List is either String or Symbol.
+            Each element of the returned List must be a property key.
           </li>
           <li>
             The returned List must contain at least the keys of all non-configurable own properties that have previously been observed.
@@ -4035,7 +4034,7 @@
 
   <emu-clause id="sec-ecmascript-specification-types">
     <h1>ECMAScript Specification Types</h1>
-    <p>A specification type corresponds to meta-values that are used within algorithms to describe the semantics of ECMAScript language constructs and ECMAScript language types. The specification types include Reference, List, Completion Record, Property Descriptor, Environment Record, Abstract Closure, and Data Block. Specification type values are specification artefacts that do not necessarily correspond to any specific entity within an ECMAScript implementation. Specification type values may be used to describe intermediate results of ECMAScript expression evaluation but such values cannot be stored as properties of objects or values of ECMAScript language variables.</p>
+    <p>A specification type corresponds to meta-values that are used within algorithms to describe the semantics of ECMAScript language constructs and ECMAScript language types. The specification types include Reference Record, List, Completion Record, Property Descriptor, Environment Record, Abstract Closure, and Data Block. Specification type values are specification artefacts that do not necessarily correspond to any specific entity within an ECMAScript implementation. Specification type values may be used to describe intermediate results of ECMAScript expression evaluation but such values cannot be stored as properties of objects or values of ECMAScript language variables.</p>
 
     <emu-clause id="sec-enum-specification-type">
       <h1>The Enum Specification Type</h1>
@@ -4178,6 +4177,19 @@
         </dl>
         <emu-alg>
           1. Return Completion Record { [[Type]]: ~throw~, [[Value]]: _value_, [[Target]]: ~empty~ }.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-returncompletion" type="abstract operation">
+        <h1>
+          ReturnCompletion (
+            _value_: an ECMAScript language value,
+          ): a return completion
+        </h1>
+        <dl class="header">
+        </dl>
+        <emu-alg>
+          1. Return Completion Record { [[Type]]: ~return~, [[Value]]: _value_, [[Target]]: ~empty~ }.
         </emu-alg>
       </emu-clause>
 
@@ -5871,6 +5883,30 @@
       </emu-alg>
     </emu-clause>
 
+    <emu-clause id="sec-sametype" type="abstract operation">
+      <h1>
+        SameType (
+          _x_: an ECMAScript language value,
+          _y_: an ECMAScript language value,
+        ): a Boolean
+      </h1>
+      <dl class="header">
+        <dt>description</dt>
+        <dd>It determines whether or not the two arguments are the same type.</dd>
+      </dl>
+      <emu-alg>
+        1. If _x_ is *undefined* and _y_ is *undefined*, return *true*.
+        1. If _x_ is *null* and _y_ is *null*, return *true*.
+        1. If _x_ is a Boolean and _y_ is a Boolean, return *true*.
+        1. If _x_ is a Number and _y_ is a Number, return *true*.
+        1. If _x_ is a BigInt and _y_ is a BigInt, return *true*.
+        1. If _x_ is a Symbol and _y_ is a Symbol, return *true*.
+        1. If _x_ is a String and _y_ is a String, return *true*.
+        1. If _x_ is an Object and _y_ is an Object, return *true*.
+        1. Return *false*.
+      </emu-alg>
+    </emu-clause>
+
     <emu-clause id="sec-samevalue" type="abstract operation">
       <h1>
         SameValue (
@@ -5883,7 +5919,7 @@
         <dd>It determines whether or not the two arguments are the same value.</dd>
       </dl>
       <emu-alg>
-        1. If Type(_x_) is not Type(_y_), return *false*.
+        1. If SameType(_x_, _y_) is *false*, return *false*.
         1. If _x_ is a Number, then
           1. Return Number::sameValue(_x_, _y_).
         1. Return SameValueNonNumber(_x_, _y_).
@@ -5905,7 +5941,7 @@
         <dd>It determines whether or not the two arguments are the same value (ignoring the difference between *+0*<sub>𝔽</sub> and *-0*<sub>𝔽</sub>).</dd>
       </dl>
       <emu-alg>
-        1. If Type(_x_) is not Type(_y_), return *false*.
+        1. If SameType(_x_, _y_) is *false*, return *false*.
         1. If _x_ is a Number, then
           1. Return Number::sameValueZero(_x_, _y_).
         1. Return SameValueNonNumber(_x_, _y_).
@@ -5925,7 +5961,7 @@
       <dl class="header">
       </dl>
       <emu-alg>
-        1. Assert: Type(_x_) is Type(_y_).
+        1. Assert: SameType(_x_, _y_) is *true*.
         1. If _x_ is either *null* or *undefined*, return *true*.
         1. If _x_ is a BigInt, then
           1. Return BigInt::equal(_x_, _y_).
@@ -5985,7 +6021,7 @@
           1. NOTE: Because _px_ and _py_ are primitive values, evaluation order is not important.
           1. Let _nx_ be ? <emu-meta suppress-effects="user-code">ToNumeric(_px_)</emu-meta>.
           1. Let _ny_ be ? <emu-meta suppress-effects="user-code">ToNumeric(_py_)</emu-meta>.
-          1. If Type(_nx_) is Type(_ny_), then
+          1. If SameType(_nx_, _ny_) is *true*, then
             1. If _nx_ is a Number, then
               1. Return Number::lessThan(_nx_, _ny_).
             1. Else,
@@ -6017,7 +6053,7 @@
         <dd>It provides the semantics for the `==` operator.</dd>
       </dl>
       <emu-alg>
-        1. If Type(_x_) is Type(_y_), then
+        1. If SameType(_x_, _y_) is *true*, then
           1. Return IsStrictlyEqual(_x_, _y_).
         1. If _x_ is *null* and _y_ is *undefined*, return *true*.
         1. If _x_ is *undefined* and _y_ is *null*, return *true*.
@@ -6052,7 +6088,7 @@
         <dd>It provides the semantics for the `===` operator.</dd>
       </dl>
       <emu-alg>
-        1. If Type(_x_) is not Type(_y_), return *false*.
+        1. If SameType(_x_, _y_) is *false*, return *false*.
         1. If _x_ is a Number, then
           1. Return Number::equal(_x_, _y_).
         1. Return SameValueNonNumber(_x_, _y_).
@@ -6447,7 +6483,7 @@
       <h1>
         CreateListFromArrayLike (
           _obj_: an ECMAScript language value,
-          optional _elementTypes_: a List of names of ECMAScript Language Types,
+          optional _validElementTypes_: ~all~ or ~property-key~,
         ): either a normal completion containing a List of ECMAScript language values or a throw completion
       </h1>
       <dl class="header">
@@ -6455,7 +6491,7 @@
         <dd>It is used to create a List value whose elements are provided by the indexed properties of _obj_. _elementTypes_ contains the names of ECMAScript Language Types that are allowed for element values of the List that is created.</dd>
       </dl>
       <emu-alg>
-        1. If _elementTypes_ is not present, set _elementTypes_ to « Undefined, Null, Boolean, String, Symbol, Number, BigInt, Object ».
+        1. If _validElementTypes_ is not present, set _validElementTypes_ to ~all~.
         1. If _obj_ is not an Object, throw a *TypeError* exception.
         1. Let _len_ be ? LengthOfArrayLike(_obj_).
         1. Let _list_ be a new empty List.
@@ -6463,7 +6499,7 @@
         1. Repeat, while _index_ &lt; _len_,
           1. Let _indexName_ be ! ToString(𝔽(_index_)).
           1. Let _next_ be ? Get(_obj_, _indexName_).
-          1. If _elementTypes_ does not contain Type(_next_), throw a *TypeError* exception.
+          1. If _validElementTypes_ is ~property-key~ and _next_ is not a property key, throw a *TypeError* exception.
           1. Append _next_ to _list_.
           1. Set _index_ to _index_ + 1.
         1. Return _list_.
@@ -13009,7 +13045,7 @@
     <emu-clause id="sec-ordinarycreatefromconstructor" type="abstract operation">
       <h1>
         OrdinaryCreateFromConstructor (
-          _constructor_: a constructor,
+          _constructor_: a function object,
           _intrinsicDefaultProto_: a String,
           optional _internalSlotsList_: a List of names of internal slots,
         ): either a normal completion containing an Object or a throw completion
@@ -13399,7 +13435,7 @@
           1. Else,
             1. Let _rhs_ be ? Evaluation of |AssignmentExpression|.
             1. Let _value_ be ? GetValue(_rhs_).
-          1. Return Completion Record { [[Type]]: ~return~, [[Value]]: _value_, [[Target]]: ~empty~ }.
+          1. Return ReturnCompletion(_value_).
         </emu-alg>
         <emu-note>
           <p>Even though field initializers constitute a function boundary, calling FunctionDeclarationInstantiation does not have any observable effect and so is omitted.</p>
@@ -15861,7 +15897,7 @@
         1. If _trap_ is *undefined*, then
           1. Return ? <emu-meta effects="user-code">_target_.[[OwnPropertyKeys]]()</emu-meta>.
         1. Let _trapResultArray_ be ? Call(_trap_, _handler_, « _target_ »).
-        1. Let _trapResult_ be ? CreateListFromArrayLike(_trapResultArray_, « String, Symbol »).
+        1. Let _trapResult_ be ? CreateListFromArrayLike(_trapResultArray_, ~property-key~).
         1. If _trapResult_ contains any duplicate entries, throw a *TypeError* exception.
         1. Let _extensibleTarget_ be ? IsExtensible(_target_).
         1. Let _targetKeys_ be ? <emu-meta effects="user-code">_target_.[[OwnPropertyKeys]]()</emu-meta>.
@@ -15898,7 +15934,7 @@
             The returned List contains no duplicate entries.
           </li>
           <li>
-            The Type of each result List element is either String or Symbol.
+            Each element of the returned List is a property key.
           </li>
           <li>
             The result List must contain the keys of all non-configurable own properties of the target object.
@@ -19612,7 +19648,7 @@
               1. Let _evaluatePromise_ be _module_.Evaluate().
               1. Let _fulfilledClosure_ be a new Abstract Closure with no parameters that captures _module_ and _promiseCapability_ and performs the following steps when called:
                 1. Let _namespace_ be GetModuleNamespace(_module_).
-                1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, « _namespace_ »).
+                1. Perform ! <emu-meta effects="user-code">Call</emu-meta>(_promiseCapability_.[[Resolve]], *undefined*, « _namespace_ »).
                 1. Return ~unused~.
               1. Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledClosure_, 0, *""*, « »).
               1. Perform PerformPromiseThen(_evaluatePromise_, _onFulfilled_, _onRejected_).
@@ -20659,41 +20695,56 @@
         1. NOTE: At this point, it must be a numeric operation.
         1. Let _lNum_ be ? ToNumeric(_lVal_).
         1. Let _rNum_ be ? ToNumeric(_rVal_).
-        1. If Type(_lNum_) is not Type(_rNum_), throw a *TypeError* exception.
+        1. If SameType(_lNum_, _rNum_) is *false*, throw a *TypeError* exception.
         1. If _lNum_ is a BigInt, then
           1. If _opText_ is `**`, return ? BigInt::exponentiate(_lNum_, _rNum_).
           1. If _opText_ is `/`, return ? BigInt::divide(_lNum_, _rNum_).
           1. If _opText_ is `%`, return ? BigInt::remainder(_lNum_, _rNum_).
           1. If _opText_ is `>>>`, return ? BigInt::unsignedRightShift(_lNum_, _rNum_).
-        1. Let _operation_ be the abstract operation associated with _opText_ and Type(_lNum_) in the following table:
-          <figure>
-            <!-- emu-format ignore -->
-            <table class="lightweight-table">
-              <thead>
-                <tr><th> _opText_       </th><th> Type(_lNum_) </th><th> _operation_                </th></tr>
-              </thead>
-              <tr><td> `**`           </td><td> Number       </td><td> Number::exponentiate       </td></tr>
-              <tr><td> `*`            </td><td> Number       </td><td> Number::multiply           </td></tr>
-              <tr><td> `*`            </td><td> BigInt       </td><td> BigInt::multiply           </td></tr>
-              <tr><td> `/`            </td><td> Number       </td><td> Number::divide             </td></tr>
-              <tr><td> `%`            </td><td> Number       </td><td> Number::remainder          </td></tr>
-              <tr><td> `+`            </td><td> Number       </td><td> Number::add                </td></tr>
-              <tr><td> `+`            </td><td> BigInt       </td><td> BigInt::add                </td></tr>
-              <tr><td> `-`            </td><td> Number       </td><td> Number::subtract           </td></tr>
-              <tr><td> `-`            </td><td> BigInt       </td><td> BigInt::subtract           </td></tr>
-              <tr><td> `&lt;&lt;`     </td><td> Number       </td><td> Number::leftShift          </td></tr>
-              <tr><td> `&lt;&lt;`     </td><td> BigInt       </td><td> BigInt::leftShift          </td></tr>
-              <tr><td> `&gt;&gt;`     </td><td> Number       </td><td> Number::signedRightShift   </td></tr>
-              <tr><td> `&gt;&gt;`     </td><td> BigInt       </td><td> BigInt::signedRightShift   </td></tr>
-              <tr><td> `&gt;&gt;&gt;` </td><td> Number       </td><td> Number::unsignedRightShift </td></tr>
-              <tr><td> `&amp;`        </td><td> Number       </td><td> Number::bitwiseAND         </td></tr>
-              <tr><td> `&amp;`        </td><td> BigInt       </td><td> BigInt::bitwiseAND         </td></tr>
-              <tr><td> `^`            </td><td> Number       </td><td> Number::bitwiseXOR         </td></tr>
-              <tr><td> `^`            </td><td> BigInt       </td><td> BigInt::bitwiseXOR         </td></tr>
-              <tr><td> `|`            </td><td> Number       </td><td> Number::bitwiseOR          </td></tr>
-              <tr><td> `|`            </td><td> BigInt       </td><td> BigInt::bitwiseOR          </td></tr>
-            </table>
-          </figure>
+          1. Let _operation_ be the abstract operation associated with _opText_ in the following table:
+            <figure>
+              <!-- emu-format ignore -->
+              <table class="lightweight-table">
+                <thead>
+                  <tr><th> _opText_   </th><th> _operation_              </th></tr>
+                </thead>
+                <tbody>
+                  <tr><td> `*`        </td><td> BigInt::multiply         </td></tr>
+                  <tr><td> `+`        </td><td> BigInt::add              </td></tr>
+                  <tr><td> `-`        </td><td> BigInt::subtract         </td></tr>
+                  <tr><td> `&lt;&lt;` </td><td> BigInt::leftShift        </td></tr>
+                  <tr><td> `&gt;&gt;` </td><td> BigInt::signedRightShift </td></tr>
+                  <tr><td> `&amp;`    </td><td> BigInt::bitwiseAND       </td></tr>
+                  <tr><td> `^`        </td><td> BigInt::bitwiseXOR       </td></tr>
+                  <tr><td> `|`        </td><td> BigInt::bitwiseOR        </td></tr>
+                </tbody>
+              </table>
+            </figure>
+        1. Else,
+          1. Assert: _lNum_ is a Number.
+          1. Let _operation_ be the abstract operation associated with _opText_ in the following table:
+            <figure>
+              <!-- emu-format ignore -->
+              <table class="lightweight-table">
+                <thead>
+                  <tr><th> _opText_       </th><th> _operation_                </th></tr>
+                </thead>
+                <tbody>
+                  <tr><td> `**`           </td><td> Number::exponentiate       </td></tr>
+                  <tr><td> `*`            </td><td> Number::multiply           </td></tr>
+                  <tr><td> `/`            </td><td> Number::divide             </td></tr>
+                  <tr><td> `%`            </td><td> Number::remainder          </td></tr>
+                  <tr><td> `+`            </td><td> Number::add                </td></tr>
+                  <tr><td> `-`            </td><td> Number::subtract           </td></tr>
+                  <tr><td> `&lt;&lt;`     </td><td> Number::leftShift          </td></tr>
+                  <tr><td> `&gt;&gt;`     </td><td> Number::signedRightShift   </td></tr>
+                  <tr><td> `&gt;&gt;&gt;` </td><td> Number::unsignedRightShift </td></tr>
+                  <tr><td> `&amp;`        </td><td> Number::bitwiseAND         </td></tr>
+                  <tr><td> `^`            </td><td> Number::bitwiseXOR         </td></tr>
+                  <tr><td> `|`            </td><td> Number::bitwiseOR          </td></tr>
+                </tbody>
+              </table>
+            </figure>
         1. Return _operation_(_lNum_, _rNum_).
       </emu-alg>
       <emu-note>
@@ -22548,14 +22599,14 @@
       <h1>Runtime Semantics: Evaluation</h1>
       <emu-grammar>ReturnStatement : `return` `;`</emu-grammar>
       <emu-alg>
-        1. Return Completion Record { [[Type]]: ~return~, [[Value]]: *undefined*, [[Target]]: ~empty~ }.
+        1. Return ReturnCompletion(*undefined*).
       </emu-alg>
       <emu-grammar>ReturnStatement : `return` Expression `;`</emu-grammar>
       <emu-alg>
         1. Let _exprRef_ be ? Evaluation of |Expression|.
         1. Let _exprValue_ be ? GetValue(_exprRef_).
         1. If GetGeneratorKind() is ~async~, set _exprValue_ to ? Await(_exprValue_).
-        1. Return Completion Record { [[Type]]: ~return~, [[Value]]: _exprValue_, [[Target]]: ~empty~ }.
+        1. Return ReturnCompletion(_exprValue_).
       </emu-alg>
     </emu-clause>
   </emu-clause>
@@ -23286,7 +23337,7 @@
     </emu-clause>
 
     <emu-clause id="sec-static-semantics-expectedargumentcount" oldids="sec-function-definitions-static-semantics-expectedargumentcount,sec-arrow-function-definitions-static-semantics-expectedargumentcount,sec-method-definitions-static-semantics-expectedargumentcount,sec-async-arrow-function-definitions-static-semantics-ExpectedArgumentCount" type="sdo">
-      <h1>Static Semantics: ExpectedArgumentCount ( ): an integer</h1>
+      <h1>Static Semantics: ExpectedArgumentCount ( ): a non-negative integer</h1>
       <dl class="header">
       </dl>
       <emu-grammar>
@@ -23657,7 +23708,7 @@
       <emu-alg>
         1. Let _exprRef_ be ? Evaluation of |AssignmentExpression|.
         1. Let _exprValue_ be ? GetValue(_exprRef_).
-        1. Return Completion Record { [[Type]]: ~return~, [[Value]]: _exprValue_, [[Target]]: ~empty~ }.
+        1. Return ReturnCompletion(_exprValue_).
       </emu-alg>
     </emu-clause>
   </emu-clause>
@@ -23980,8 +24031,9 @@
         1. Perform ? FunctionDeclarationInstantiation(_functionObject_, _argumentsList_).
         1. Let _G_ be ? OrdinaryCreateFromConstructor(_functionObject_, *"%GeneratorFunction.prototype.prototype%"*, « [[GeneratorState]], [[GeneratorContext]], [[GeneratorBrand]] »).
         1. Set _G_.[[GeneratorBrand]] to ~empty~.
+        1. Set _G_.[[GeneratorState]] to ~suspended-start~.
         1. Perform GeneratorStart(_G_, |FunctionBody|).
-        1. Return Completion Record { [[Type]]: ~return~, [[Value]]: _G_, [[Target]]: ~empty~ }.
+        1. Return ReturnCompletion(_G_).
       </emu-alg>
     </emu-clause>
 
@@ -24109,7 +24161,7 @@
               1. Else, set _received_ to Completion(GeneratorYield(_innerResult_)).
             1. Else,
               1. NOTE: If _iterator_ does not have a `throw` method, this throw is going to terminate the `yield*` loop. But first we need to give _iterator_ a chance to clean up.
-              1. Let _closeCompletion_ be Completion Record { [[Type]]: ~normal~, [[Value]]: ~empty~, [[Target]]: ~empty~ }.
+              1. Let _closeCompletion_ be NormalCompletion(~empty~).
               1. If _generatorKind_ is ~async~, perform ? AsyncIteratorClose(_iteratorRecord_, _closeCompletion_).
               1. Else, perform ? IteratorClose(_iteratorRecord_, _closeCompletion_).
               1. NOTE: The next step throws a *TypeError* to indicate that there was a `yield*` protocol violation: _iterator_ does not have a `throw` method.
@@ -24121,14 +24173,14 @@
               1. Set _value_ to _received_.[[Value]].
               1. If _generatorKind_ is ~async~, then
                 1. Set _value_ to ? Await(_value_).
-              1. Return Completion Record { [[Type]]: ~return~, [[Value]]: _value_, [[Target]]: ~empty~ }.
+              1. Return ReturnCompletion(_value_).
             1. Let _innerReturnResult_ be ? Call(_return_, _iterator_, « _received_.[[Value]] »).
             1. If _generatorKind_ is ~async~, set _innerReturnResult_ to ? Await(_innerReturnResult_).
             1. If _innerReturnResult_ is not an Object, throw a *TypeError* exception.
             1. Let _done_ be ? IteratorComplete(_innerReturnResult_).
             1. If _done_ is *true*, then
               1. Set _value_ to ? IteratorValue(_innerReturnResult_).
-              1. Return Completion Record { [[Type]]: ~return~, [[Value]]: _value_, [[Target]]: ~empty~ }.
+              1. Return ReturnCompletion(_value_).
             1. If _generatorKind_ is ~async~, set _received_ to Completion(AsyncGeneratorYield(? IteratorValue(_innerReturnResult_))).
             1. Else, set _received_ to Completion(GeneratorYield(_innerReturnResult_)).
       </emu-alg>
@@ -24207,8 +24259,9 @@
         1. Perform ? FunctionDeclarationInstantiation(_functionObject_, _argumentsList_).
         1. Let _generator_ be ? OrdinaryCreateFromConstructor(_functionObject_, *"%AsyncGeneratorFunction.prototype.prototype%"*, « [[AsyncGeneratorState]], [[AsyncGeneratorContext]], [[AsyncGeneratorQueue]], [[GeneratorBrand]] »).
         1. Set _generator_.[[GeneratorBrand]] to ~empty~.
+        1. Set _generator_.[[AsyncGeneratorState]] to ~suspended-start~.
         1. Perform AsyncGeneratorStart(_generator_, |FunctionBody|).
-        1. Return Completion Record { [[Type]]: ~return~, [[Value]]: _generator_, [[Target]]: ~empty~ }.
+        1. Return ReturnCompletion(_generator_).
       </emu-alg>
     </emu-clause>
 
@@ -25224,7 +25277,7 @@
           1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « _completion_.[[Value]] »).
         1. Else,
           1. Perform AsyncFunctionStart(_promiseCapability_, |FunctionBody|).
-        1. Return Completion Record { [[Type]]: ~return~, [[Value]]: _promiseCapability_.[[Promise]], [[Target]]: ~empty~ }.
+        1. Return ReturnCompletion(_promiseCapability_.[[Promise]]).
       </emu-alg>
     </emu-clause>
 
@@ -25331,7 +25384,7 @@
           1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « _completion_.[[Value]] »).
         1. Else,
           1. Perform AsyncFunctionStart(_promiseCapability_, |ExpressionBody|).
-        1. Return Completion Record { [[Type]]: ~return~, [[Value]]: _promiseCapability_.[[Promise]], [[Target]]: ~empty~ }.
+        1. Return ReturnCompletion(_promiseCapability_.[[Promise]]).
       </emu-alg>
     </emu-clause>
 
@@ -26922,6 +26975,7 @@
                   1. If _result_ is an abrupt completion, then
                     1. Perform AsyncModuleExecutionRejected(_m_, _result_.[[Value]]).
                   1. Else,
+                    1. Set _m_.[[AsyncEvaluation]] to *false*.
                     1. Set _m_.[[Status]] to ~evaluated~.
                     1. If _m_.[[TopLevelCapability]] is not ~empty~, then
                       1. Assert: _m_.[[CycleRoot]] and _m_ are the same Module Record.
@@ -26948,6 +27002,8 @@
               1. Assert: _module_.[[EvaluationError]] is ~empty~.
               1. Set _module_.[[EvaluationError]] to ThrowCompletion(_error_).
               1. Set _module_.[[Status]] to ~evaluated~.
+              1. Set _module_.[[AsyncEvaluation]] to *false*.
+              1. NOTE: _module_.[[AsyncEvaluation]] is set to *false* for symmetry with AsyncModuleExecutionFulfilled. In InnerModuleEvaluation, the value of a module's [[AsyncEvaluation]] internal slot is unused when its [[EvaluationError]] internal slot is not ~empty~.
               1. For each Cyclic Module Record _m_ of _module_.[[AsyncParentModules]], do
                 1. Perform AsyncModuleExecutionRejected(_m_, _error_).
               1. If _module_.[[TopLevelCapability]] is not ~empty~, then
@@ -30294,7 +30350,7 @@
           <h1>
             CreateDynamicFunction (
               _constructor_: a constructor,
-              _newTarget_: a constructor,
+              _newTarget_: a constructor or *undefined*,
               _kind_: ~normal~, ~generator~, ~async~, or ~async-generator~,
               _parameterArgs_: a List of ECMAScript language values,
               _bodyArg_: an ECMAScript language value,
@@ -31908,7 +31964,7 @@
     <emu-clause id="sec-function-properties-of-the-math-object">
       <h1>Function Properties of the Math Object</h1>
       <emu-note>
-        <p>The behaviour of the functions `acos`, `acosh`, `asin`, `asinh`, `atan`, `atanh`, `atan2`, `cbrt`, `cos`, `cosh`, `exp`, `expm1`, `hypot`, `log`, `log1p`, `log2`, `log10`, `pow`, `random`, `sin`, `sinh`, `sqrt`, `tan`, and `tanh` is not precisely specified here except to require specific results for certain argument values that represent boundary cases of interest. For other argument values, these functions are intended to compute approximations to the results of familiar mathematical functions, but some latitude is allowed in the choice of approximation algorithms. The general intent is that an implementer should be able to use the same mathematical library for ECMAScript on a given hardware platform that is available to C programmers on that platform.</p>
+        <p>The behaviour of the functions `acos`, `acosh`, `asin`, `asinh`, `atan`, `atanh`, `atan2`, `cbrt`, `cos`, `cosh`, `exp`, `expm1`, `hypot`, `log`, `log1p`, `log2`, `log10`, `pow`, `random`, `sin`, `sinh`, `tan`, and `tanh` is not precisely specified here except to require specific results for certain argument values that represent boundary cases of interest. For other argument values, these functions are intended to compute approximations to the results of familiar mathematical functions, but some latitude is allowed in the choice of approximation algorithms. The general intent is that an implementer should be able to use the same mathematical library for ECMAScript on a given hardware platform that is available to C programmers on that platform.</p>
         <p>Although the choice of algorithms is left to the implementation, it is recommended (but not specified by this standard) that implementations use the approximation algorithms for IEEE 754-2019 arithmetic contained in `fdlibm`, the freely distributable mathematical library from Sun Microsystems (<a href="http://www.netlib.org/fdlibm">http://www.netlib.org/fdlibm</a>).</p>
       </emu-note>
 
@@ -32381,7 +32437,7 @@
           1. Let _n_ be ? ToNumber(_x_).
           1. If _n_ is one of *NaN*, *+0*<sub>𝔽</sub>, *-0*<sub>𝔽</sub>, or *+∞*<sub>𝔽</sub>, return _n_.
           1. If _n_ &lt; *-0*<sub>𝔽</sub>, return *NaN*.
-          1. Return an implementation-approximated Number value representing the square root of ℝ(_n_).
+          1. Return 𝔽(the square root of ℝ(_n_)).
         </emu-alg>
       </emu-clause>
 
@@ -34865,7 +34921,7 @@ THH:mm:ss.sss
 
       <emu-clause id="sec-string.prototype.matchall">
         <h1>String.prototype.matchAll ( _regexp_ )</h1>
-        <p>This method performs a regular expression match of the String representing the *this* value against _regexp_ and returns an iterator. Each iteration result's value is an Array containing the results of the match, or *null* if the String did not match.</p>
+        <p>This method performs a regular expression match of the String representing the *this* value against _regexp_ and returns an iterator that yields match results. Each match result is an Array containing the matched portion of the String as the first element, followed by the portions matched by any capturing groups. If the regular expression never matches, the returned iterator does not yield any match results.</p>
         <p>It performs the following steps when called:</p>
 
         <emu-alg>
@@ -35224,7 +35280,9 @@ THH:mm:ss.sss
             1. Return CreateArrayFromList(« _S_ »).
           1. Let _separatorLength_ be the length of _R_.
           1. If _separatorLength_ = 0, then
-            1. Let _head_ be the substring of _S_ from 0 to _lim_.
+            1. Let _strLen_ be the length of _S_.
+            1. Let _outLen_ be the result of clamping _lim_ between 0 and _strLen_.
+            1. Let _head_ be the substring of _S_ from 0 to _outLen_.
             1. Let _codeUnits_ be a List consisting of the sequence of code units that are the elements of _head_.
             1. Return CreateArrayFromList(_codeUnits_).
           1. If _S_ is the empty String, return CreateArrayFromList(« _S_ »).
@@ -39680,7 +39738,7 @@ THH:mm:ss.sss
 
       <emu-clause id="sec-array.prototype.sort" oldids="sec-sortcompare">
         <h1>Array.prototype.sort ( _comparator_ )</h1>
-        <p>This method sorts the elements of this array. The sort must be stable (that is, elements that compare equal must remain in their original order). If _comparator_ is not *undefined*, it should be a function that accepts two arguments _x_ and _y_ and returns a negative Number if _x_ &lt; _y_, a positive Number if _x_ > _y_, or a zero otherwise.</p>
+        <p>This method sorts the elements of this array. If _comparator_ is not *undefined*, it should be a function that accepts two arguments _x_ and _y_ and returns a negative Number if _x_ &lt; _y_, a positive Number if _x_ > _y_, or a zero otherwise.</p>
         <p>It performs the following steps when called:</p>
         <emu-alg>
           1. [id="step-array-sort-comparefn"] If _comparator_ is not *undefined* and IsCallable(_comparator_) is *false*, throw a *TypeError* exception.
@@ -39738,7 +39796,7 @@ THH:mm:ss.sss
             1. [id="step-array-sort"] Sort _items_ using an implementation-defined sequence of <emu-meta effects="user-code">calls to _SortCompare_</emu-meta>. If any such call returns an abrupt completion, stop before performing any further calls to _SortCompare_ and return that Completion Record.
             1. Return _items_.
           </emu-alg>
-          <p>The <dfn id="sort-order">sort order</dfn> is the ordering of _items_ after completion of step <emu-xref href="#step-array-sort"></emu-xref> of the algorithm above. The sort order is implementation-defined if _SortCompare_ is not a consistent comparator for the elements of _items_. When SortIndexedProperties is invoked by <emu-xref href="#sec-array.prototype.sort">Array.prototype.sort</emu-xref>, the sort order is also implementation-defined if _comparator_ is *undefined*, and all applications of ToString, to any specific value passed as an argument to _SortCompare_, do not produce the same result.</p>
+          <p>The <dfn id="sort-order">sort order</dfn> is the ordering of _items_ after completion of step <emu-xref href="#step-array-sort"></emu-xref> of the algorithm above. The sort order is implementation-defined if _SortCompare_ is not a consistent comparator for the elements of _items_. When SortIndexedProperties is invoked by <emu-xref href="#sec-array.prototype.sort">Array.prototype.sort</emu-xref> or <emu-xref href="#sec-array.prototype.tosorted">Array.prototype.toSorted</emu-xref>, the sort order is also implementation-defined if _comparator_ is *undefined*, and all applications of ToString, to any specific value passed as an argument to _SortCompare_, do not produce the same result.</p>
           <p>Unless the sort order is specified to be implementation-defined, it must satisfy all of the following conditions:</p>
           <ul>
             <li>
@@ -39746,6 +39804,9 @@ THH:mm:ss.sss
             </li>
             <li>
               Then for all non-negative integers _j_ and _k_, each less than _itemCount_, if <emu-eqn>ℝ(_SortCompare_(old[_j_], old[_k_])) &lt; 0</emu-eqn>, then <emu-eqn>π(_j_) &lt; π(_k_)</emu-eqn>.
+            </li>
+            <li>
+              And for all non-negative integers _j_ and _k_ such that _j_ &lt; _k_ &lt; _itemCount_, if <emu-eqn>ℝ(_SortCompare_(old[_j_], old[_k_])) = 0</emu-eqn>, then <emu-eqn>π(_j_) &lt; π(_k_)</emu-eqn>; i.e., the sort is stable.
             </li>
           </ul>
           <p>Here the notation <emu-eqn>old[_j_]</emu-eqn> is used to refer to <emu-eqn>_items_[_j_]</emu-eqn> before step <emu-xref href="#step-array-sort"></emu-xref> is executed, and the notation <emu-eqn>new[_j_]</emu-eqn> to refer to <emu-eqn>_items_[_j_]</emu-eqn> after step <emu-xref href="#step-array-sort"></emu-xref> has been executed.</p>
@@ -44993,7 +45054,7 @@ THH:mm:ss.sss
           EnqueueResolveInAgentJob (
             _agentSignifier_: an agent signifier,
             _promiseCapability_: a PromiseCapability Record,
-            _resolution_: an ECMAScript language value,
+            _resolution_: *"ok"* or *"timed-out"*,
           ): ~unused~
         </h1>
         <dl class="header">
@@ -46539,7 +46600,7 @@ THH:mm:ss.sss
             1. IfAbruptRejectPromise(_return_, _promiseCapability_).
             1. If _return_ is *undefined*, then
               1. Let _iteratorResult_ be CreateIteratorResultObject(_value_, *true*).
-              1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, « _iteratorResult_ »).
+              1. Perform ! <emu-meta effects="user-code">Call</emu-meta>(_promiseCapability_.[[Resolve]], *undefined*, « _iteratorResult_ »).
               1. Return _promiseCapability_.[[Promise]].
             1. If _value_ is present, then
               1. Let _result_ be Completion(Call(_return_, _syncIterator_, « _value_ »)).
@@ -47508,7 +47569,7 @@ THH:mm:ss.sss
         <emu-clause id="sec-promise-resolve" type="abstract operation">
           <h1>
             PromiseResolve (
-              _C_: a constructor,
+              _C_: an Object,
               _x_: an ECMAScript language value,
             ): either a normal completion containing an ECMAScript language value or a throw completion
           </h1>
@@ -47997,7 +48058,7 @@ THH:mm:ss.sss
         <p>This method performs the following steps when called:</p>
         <emu-alg>
           1. Let _g_ be the *this* value.
-          1. Let _C_ be Completion Record { [[Type]]: ~return~, [[Value]]: _value_, [[Target]]: ~empty~ }.
+          1. Let _C_ be ReturnCompletion(_value_).
           1. Return ? GeneratorResumeAbrupt(_g_, _C_, ~empty~).
         </emu-alg>
       </emu-clause>
@@ -48042,7 +48103,7 @@ THH:mm:ss.sss
               [[GeneratorState]]
             </td>
             <td>
-              *undefined*, ~suspended-start~, ~suspended-yield~, ~executing~, or ~completed~
+              ~suspended-start~, ~suspended-yield~, ~executing~, or ~completed~
             </td>
             <td>
               The current execution state of the generator.
@@ -48087,7 +48148,7 @@ THH:mm:ss.sss
         <dl class="header">
         </dl>
         <emu-alg>
-          1. Assert: The value of _generator_.[[GeneratorState]] is *undefined*.
+          1. Assert: The value of _generator_.[[GeneratorState]] is ~suspended-start~.
           1. Let _genContext_ be the running execution context.
           1. Set the Generator component of _genContext_ to _generator_.
           1. Let _closure_ be a new Abstract Closure with no parameters that captures _generatorBody_ and performs the following steps when called:
@@ -48112,7 +48173,6 @@ THH:mm:ss.sss
             1. Return CreateIteratorResultObject(_resultValue_, *true*).
           1. Set the code evaluation state of _genContext_ such that when evaluation is resumed for that execution context, _closure_ will be called with no arguments.
           1. Set _generator_.[[GeneratorContext]] to _genContext_.
-          1. Set _generator_.[[GeneratorState]] to ~suspended-start~.
           1. Return ~unused~.
         </emu-alg>
       </emu-clause>
@@ -48308,14 +48368,14 @@ THH:mm:ss.sss
           1. Let _state_ be _generator_.[[AsyncGeneratorState]].
           1. If _state_ is ~completed~, then
             1. Let _iteratorResult_ be CreateIteratorResultObject(*undefined*, *true*).
-            1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, « _iteratorResult_ »).
+            1. Perform ! <emu-meta effects="user-code">Call</emu-meta>(_promiseCapability_.[[Resolve]], *undefined*, « _iteratorResult_ »).
             1. Return _promiseCapability_.[[Promise]].
           1. Let _completion_ be NormalCompletion(_value_).
           1. Perform AsyncGeneratorEnqueue(_generator_, _completion_, _promiseCapability_).
           1. If _state_ is either ~suspended-start~ or ~suspended-yield~, then
             1. Perform AsyncGeneratorResume(_generator_, _completion_).
           1. Else,
-            1. Assert: _state_ is either ~executing~ or ~awaiting-return~.
+            1. Assert: _state_ is either ~executing~ or ~draining-queue~.
           1. Return _promiseCapability_.[[Promise]].
         </emu-alg>
       </emu-clause>
@@ -48327,16 +48387,16 @@ THH:mm:ss.sss
           1. Let _promiseCapability_ be ! NewPromiseCapability(%Promise%).
           1. Let _result_ be Completion(AsyncGeneratorValidate(_generator_, ~empty~)).
           1. IfAbruptRejectPromise(_result_, _promiseCapability_).
-          1. Let _completion_ be Completion Record { [[Type]]: ~return~, [[Value]]: _value_, [[Target]]: ~empty~ }.
+          1. Let _completion_ be ReturnCompletion(_value_).
           1. Perform AsyncGeneratorEnqueue(_generator_, _completion_, _promiseCapability_).
           1. Let _state_ be _generator_.[[AsyncGeneratorState]].
           1. If _state_ is either ~suspended-start~ or ~completed~, then
-            1. Set _generator_.[[AsyncGeneratorState]] to ~awaiting-return~.
+            1. Set _generator_.[[AsyncGeneratorState]] to ~draining-queue~.
             1. Perform AsyncGeneratorAwaitReturn(_generator_).
           1. Else if _state_ is ~suspended-yield~, then
             1. Perform AsyncGeneratorResume(_generator_, _completion_).
           1. Else,
-            1. Assert: _state_ is either ~executing~ or ~awaiting-return~.
+            1. Assert: _state_ is either ~executing~ or ~draining-queue~.
           1. Return _promiseCapability_.[[Promise]].
         </emu-alg>
       </emu-clause>
@@ -48360,7 +48420,7 @@ THH:mm:ss.sss
           1. If _state_ is ~suspended-yield~, then
             1. Perform AsyncGeneratorResume(_generator_, _completion_).
           1. Else,
-            1. Assert: _state_ is either ~executing~ or ~awaiting-return~.
+            1. Assert: _state_ is either ~executing~ or ~draining-queue~.
           1. Return _promiseCapability_.[[Promise]].
         </emu-alg>
       </emu-clause>
@@ -48386,7 +48446,7 @@ THH:mm:ss.sss
           </thead>
           <tr>
             <td>[[AsyncGeneratorState]]</td>
-            <td>*undefined*, ~suspended-start~, ~suspended-yield~, ~executing~, ~awaiting-return~, or ~completed~</td>
+            <td>~suspended-start~, ~suspended-yield~, ~executing~, ~draining-queue~, or ~completed~</td>
             <td>The current execution state of the async generator.</td>
           </tr>
           <tr>
@@ -48397,7 +48457,7 @@ THH:mm:ss.sss
           <tr>
             <td>[[AsyncGeneratorQueue]]</td>
             <td>a List of AsyncGeneratorRequest Records</td>
-            <td>Records which represent requests to resume the async generator. Except during state transitions, it is non-empty if and only if [[AsyncGeneratorState]] is either ~executing~ or ~awaiting-return~.</td>
+            <td>Records which represent requests to resume the async generator. Except during state transitions, it is non-empty if and only if [[AsyncGeneratorState]] is either ~executing~ or ~draining-queue~.</td>
           </tr>
           <tr>
             <td>[[GeneratorBrand]]</td>
@@ -48448,7 +48508,7 @@ THH:mm:ss.sss
         <dl class="header">
         </dl>
         <emu-alg>
-          1. Assert: _generator_.[[AsyncGeneratorState]] is *undefined*.
+          1. Assert: _generator_.[[AsyncGeneratorState]] is ~suspended-start~.
           1. Let _genContext_ be the running execution context.
           1. Set the Generator component of _genContext_ to _generator_.
           1. Let _closure_ be a new Abstract Closure with no parameters that captures _generatorBody_ and performs the following steps when called:
@@ -48461,7 +48521,7 @@ THH:mm:ss.sss
               1. Let _result_ be Completion(_generatorBody_()).
             1. Assert: If we return here, the async generator either threw an exception or performed either an implicit or explicit return.
             1. Remove _acGenContext_ from the execution context stack and restore the execution context that is at the top of the execution context stack as the running execution context.
-            1. Set _acGenerator_.[[AsyncGeneratorState]] to ~completed~.
+            1. Set _acGenerator_.[[AsyncGeneratorState]] to ~draining-queue~.
             1. If _result_ is a normal completion, set _result_ to NormalCompletion(*undefined*).
             1. If _result_ is a return completion, set _result_ to NormalCompletion(_result_.[[Value]]).
             1. Perform AsyncGeneratorCompleteStep(_acGenerator_, _result_, *true*).
@@ -48469,7 +48529,6 @@ THH:mm:ss.sss
             1. Return *undefined*.
           1. Set the code evaluation state of _genContext_ such that when evaluation is resumed for that execution context, _closure_ will be called with no arguments.
           1. Set _generator_.[[AsyncGeneratorContext]] to _genContext_.
-          1. Set _generator_.[[AsyncGeneratorState]] to ~suspended-start~.
           1. Set _generator_.[[AsyncGeneratorQueue]] to a new empty List.
           1. Return ~unused~.
         </emu-alg>
@@ -48538,7 +48597,7 @@ THH:mm:ss.sss
               1. Set the running execution context's Realm to _oldRealm_.
             1. Else,
               1. Let _iteratorResult_ be CreateIteratorResultObject(_value_, _done_).
-            1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, « _iteratorResult_ »).
+            1. Perform ! <emu-meta effects="user-code">Call</emu-meta>(_promiseCapability_.[[Resolve]], *undefined*, « _iteratorResult_ »).
           1. Return ~unused~.
         </emu-alg>
       </emu-clause>
@@ -48579,7 +48638,7 @@ THH:mm:ss.sss
           1. Let _awaited_ be Completion(Await(_resumptionValue_.[[Value]])).
           1. If _awaited_ is a throw completion, return ? _awaited_.
           1. Assert: _awaited_ is a normal completion.
-          1. Return Completion Record { [[Type]]: ~return~, [[Value]]: _awaited_.[[Value]], [[Target]]: ~empty~ }.
+          1. Return ReturnCompletion(_awaited_.[[Value]]).
         </emu-alg>
       </emu-clause>
 
@@ -48626,6 +48685,7 @@ THH:mm:ss.sss
         <dl class="header">
         </dl>
         <emu-alg>
+          1. Assert: _generator_.[[AsyncGeneratorState]] is ~draining-queue~.
           1. Let _queue_ be _generator_.[[AsyncGeneratorQueue]].
           1. Assert: _queue_ is not empty.
           1. Let _next_ be the first element of _queue_.
@@ -48633,21 +48693,20 @@ THH:mm:ss.sss
           1. Assert: _completion_ is a return completion.
           1. Let _promiseCompletion_ be Completion(PromiseResolve(%Promise%, _completion_.[[Value]])).
           1. If _promiseCompletion_ is an abrupt completion, then
-            1. Set _generator_.[[AsyncGeneratorState]] to ~completed~.
             1. Perform AsyncGeneratorCompleteStep(_generator_, _promiseCompletion_, *true*).
             1. Perform AsyncGeneratorDrainQueue(_generator_).
             1. Return ~unused~.
           1. Assert: _promiseCompletion_ is a normal completion.
           1. Let _promise_ be _promiseCompletion_.[[Value]].
           1. Let _fulfilledClosure_ be a new Abstract Closure with parameters (_value_) that captures _generator_ and performs the following steps when called:
-            1. Set _generator_.[[AsyncGeneratorState]] to ~completed~.
+            1. Assert: _generator_.[[AsyncGeneratorState]] is ~draining-queue~.
             1. Let _result_ be NormalCompletion(_value_).
             1. Perform AsyncGeneratorCompleteStep(_generator_, _result_, *true*).
             1. Perform AsyncGeneratorDrainQueue(_generator_).
             1. Return *undefined*.
           1. Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledClosure_, 1, *""*, « »).
           1. Let _rejectedClosure_ be a new Abstract Closure with parameters (_reason_) that captures _generator_ and performs the following steps when called:
-            1. Set _generator_.[[AsyncGeneratorState]] to ~completed~.
+            1. Assert: _generator_.[[AsyncGeneratorState]] is ~draining-queue~.
             1. Let _result_ be ThrowCompletion(_reason_).
             1. Perform AsyncGeneratorCompleteStep(_generator_, _result_, *true*).
             1. Perform AsyncGeneratorDrainQueue(_generator_).
@@ -48669,22 +48728,25 @@ THH:mm:ss.sss
           <dd>It drains the generator's AsyncGeneratorQueue until it encounters an AsyncGeneratorRequest which holds a return completion.</dd>
         </dl>
         <emu-alg>
-          1. Assert: _generator_.[[AsyncGeneratorState]] is ~completed~.
+          1. Assert: _generator_.[[AsyncGeneratorState]] is ~draining-queue~.
           1. Let _queue_ be _generator_.[[AsyncGeneratorQueue]].
-          1. If _queue_ is empty, return ~unused~.
+          1. If _queue_ is empty, then
+            1. Set _generator_.[[AsyncGeneratorState]] to ~completed~.
+            1. Return ~unused~.
           1. Let _done_ be *false*.
           1. Repeat, while _done_ is *false*,
             1. Let _next_ be the first element of _queue_.
             1. Let _completion_ be Completion(_next_.[[Completion]]).
             1. If _completion_ is a return completion, then
-              1. Set _generator_.[[AsyncGeneratorState]] to ~awaiting-return~.
               1. Perform AsyncGeneratorAwaitReturn(_generator_).
               1. Set _done_ to *true*.
             1. Else,
               1. If _completion_ is a normal completion, then
                 1. Set _completion_ to NormalCompletion(*undefined*).
               1. Perform AsyncGeneratorCompleteStep(_generator_, _completion_, *true*).
-              1. If _queue_ is empty, set _done_ to *true*.
+              1. If _queue_ is empty, then
+                1. Set _generator_.[[AsyncGeneratorState]] to ~completed~.
+                1. Set _done_ to *true*.
           1. Return ~unused~.
         </emu-alg>
       </emu-clause>
@@ -48855,7 +48917,7 @@ THH:mm:ss.sss
             1. If _result_ is a normal completion, then
               1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, « *undefined* »).
             1. Else if _result_ is a return completion, then
-              1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, « _result_.[[Value]] »).
+              1. Perform ! <emu-meta effects="user-code">Call</emu-meta>(_promiseCapability_.[[Resolve]], *undefined*, « _result_.[[Value]] »).
             1. Else,
               1. Assert: _result_ is a throw completion.
               1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « _result_.[[Value]] »).
